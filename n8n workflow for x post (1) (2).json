@@ -1,0 +1,808 @@
+{
+  "name": "rss feed x",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $('X account list').item.json[\"Rss feed url \"] }}",
+        "options": {
+          "ignoreSSL": false
+        }
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        2860,
+        -280
+      ],
+      "id": "a04a0dac-c719-4151-bdca-035ea46ddf47",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "jsCode": "function extractTweetText(html) {\n  // Remove <script> tags\n  html = html.replace(/<script.*?<\\/script>/gs, '');\n\n  // Replace <br> with newlines\n  html = html.replace(/<br\\s*\\/?>/gi, '\\n');\n\n  // Match all <p> tags and join the text\n  const matches = [...html.matchAll(/<p[^>]*>(.*?)<\\/p>/g)];\n  let text = matches.map(m => m[1]).join('\\n');\n\n  // Remove any remaining HTML tags\n  text = text.replace(/<[^>]+>/g, '');\n\n  // Decode common HTML entities\n  text = text.replace(/&amp;/g, '&')\n             .replace(/&lt;/g, '<')\n             .replace(/&gt;/g, '>')\n             .replace(/&quot;/g, '\"')\n             .replace(/&#39;/g, \"'\");\n\n  return text.trim();\n}\n\n// Loop through all RSS items\nconst rssItems = $input.all(); // This will get all the RSS items\n\nconst results = rssItems.map(rssItem => {\n  const rssDateRaw = rssItem.json.pubDate;\n  const rssAccount = (rssItem.json.creator || '').trim();\n  const rawContent = (rssItem.json.content || '').trim();\n  const fallbackTitle = (rssItem.json.title || '').trim();\n  const fallbackSnippet = (rssItem.json.contentSnippet || '').trim();\n\n  // Extract and clean post content\n  let cleanPost = extractTweetText(rawContent);\n\n  // Fallback if no content extracted\n  if (!cleanPost) {\n    cleanPost = fallbackTitle || fallbackSnippet || \"No content available\";\n  }\n\n  // Check date validity\n  let rssDate;\n  try {\n    rssDate = new Date(rssDateRaw);\n    if (isNaN(rssDate)) throw new Error('Invalid date');\n    rssDate = rssDate.toISOString();\n  } catch (e) {\n    throw new Error(`Invalid RSS date: ${rssDateRaw}`);\n  }\n\n  return {\n    json: {\n      \"Date and Time \": rssDate,\n      \"x account \": rssAccount,\n      \"post \": cleanPost\n    }\n  };\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        -280
+      ],
+      "id": "7a69d182-d167-4af7-9658-aa4cd03c4a32",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ",
+          "mode": "list",
+          "cachedResultName": "X posts updated",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1995156084,
+          "mode": "list",
+          "cachedResultName": "post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit#gid=1995156084"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date and Time ": "={{ $('last 1 hour').item.json[\"Date and Time \"] }}",
+            "x account ": "={{ $('last 1 hour').item.json[\"x account \"] }}",
+            "post ": "={{ $('last 1 hour').item.json[\"post \"] }}"
+          },
+          "matchingColumns": [
+            "Date and Time "
+          ],
+          "schema": [
+            {
+              "id": "Date and Time ",
+              "displayName": "Date and Time ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "x account ",
+              "displayName": "x account ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post ",
+              "displayName": "post ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4460,
+        -260
+      ],
+      "id": "d7a6bc95-2c41-4ac7-9379-2ef006184441",
+      "name": "Google Sheets1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HnNAuXH7E59P2ff6",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ",
+          "mode": "list",
+          "cachedResultName": "X posts updated",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2080153648,
+          "mode": "list",
+          "cachedResultName": "x account",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit#gid=2080153648"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2180,
+        -300
+      ],
+      "id": "a3f2c10e-8383-46a0-8fbb-bd88e2402c6d",
+      "name": "X account list",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HnNAuXH7E59P2ff6",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ",
+          "mode": "list",
+          "cachedResultName": "X posts updated",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1995156084,
+          "mode": "list",
+          "cachedResultName": "post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit#gid=1995156084"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2680,
+        -280
+      ],
+      "id": "46bdd3fe-44a1-49c5-aeeb-421b4b7ca4de",
+      "name": "post read",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HnNAuXH7E59P2ff6",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4780,
+        -260
+      ],
+      "id": "489c6f1b-326e-41b9-b21d-f0ffa0429333",
+      "name": "Wait",
+      "webhookId": "e465db33-cbff-4cee-be48-d719e1acdaec",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the reference date from the first item\nconst nowISOString = $input.first().json[\"Date and Time \"];\nconst now = new Date(nowISOString);\n\n// Subtract 1 hour to get cutoff time\nconst oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);\n\n// Get all RSS items\nconst items = $input.all();\n\nconst results = items.filter(item => {\n  const dateStr = item.json[\"Date and Time \"];\n  const itemDate = new Date(dateStr);\n  return itemDate >= oneHourAgo && itemDate <= now;\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3220,
+        -280
+      ],
+      "id": "5d337a45-aa43-460c-bcea-23939166030b",
+      "name": "last 1 hour"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2420,
+        -300
+      ],
+      "id": "4972af0a-2508-41b3-9e80-9357c014b915",
+      "name": "OuterLoop"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ 1 }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4100,
+        -280
+      ],
+      "id": "924c9a6e-5248-4dfb-9fc7-6b6466f1cb70",
+      "name": "innerloop",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ",
+          "mode": "list",
+          "cachedResultName": "X posts updated",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1995156084,
+          "mode": "list",
+          "cachedResultName": "post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit#gid=1995156084"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date and Time ": "={{ $('last 1 hour').item.json[\"Date and Time \"] }}",
+            "x account ": "={{ $('last 1 hour').item.json[\"x account \"] }}",
+            "post ": "={{ $('last 1 hour').item.json[\"post \"] }}"
+          },
+          "matchingColumns": [
+            "Date and Time "
+          ],
+          "schema": [
+            {
+              "id": "Date and Time ",
+              "displayName": "Date and Time ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "x account ",
+              "displayName": "x account ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post ",
+              "displayName": "post ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4480,
+        20
+      ],
+      "id": "018969a6-c8f7-4563-8244-6fedb72a2399",
+      "name": "Google Sheets",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HnNAuXH7E59P2ff6",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4800,
+        20
+      ],
+      "id": "ade6042c-0781-48ae-ba98-e81a6b2dfe21",
+      "name": "Wait1",
+      "webhookId": "e465db33-cbff-4cee-be48-d719e1acdaec",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ 1 }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4120,
+        0
+      ],
+      "id": "9d43022e-7278-4442-8d07-bcdcd658455a",
+      "name": "innerloop1",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ",
+          "mode": "list",
+          "cachedResultName": "X posts updated",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1995156084,
+          "mode": "list",
+          "cachedResultName": "post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Nn_jXTmAC79U9Wdsve_GZ1vQ9r6Sm48paRZbdH79HAQ/edit#gid=1995156084"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date and Time ": "={{ $('last 1 hour').item.json[\"Date and Time \"] }}",
+            "x account ": "={{ $('last 1 hour').item.json[\"x account \"] }}",
+            "post ": "={{ $('last 1 hour').item.json[\"post \"] }}"
+          },
+          "matchingColumns": [
+            "Date and Time "
+          ],
+          "schema": [
+            {
+              "id": "Date and Time ",
+              "displayName": "Date and Time ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "x account ",
+              "displayName": "x account ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post ",
+              "displayName": "post ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4460,
+        -540
+      ],
+      "id": "ae93690d-cca2-45a6-b48e-6e0ec5122833",
+      "name": "Google Sheets2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HnNAuXH7E59P2ff6",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        4780,
+        -540
+      ],
+      "id": "14df428e-620a-4fe6-a9ba-d468f2660dd5",
+      "name": "Wait2",
+      "webhookId": "e465db33-cbff-4cee-be48-d719e1acdaec",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": "={{ 1 }}"
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4100,
+        -560
+      ],
+      "id": "d897203a-963e-479d-bba9-677d4c266f8a",
+      "name": "innerloop2",
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json[\"x account \"] }}",
+                    "rightValue": "@coingecko",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "96c1a43f-79cb-4518-b964-3024df0e32ed"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "@coingecko"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "61b67fba-e7c7-409e-b0b0-e4e7b36fb8ef",
+                    "leftValue": "={{ $json[\"x account \"] }}",
+                    "rightValue": "@CoinMarketCap",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "@CoinMarketCap"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0da643d7-3a76-41a9-aa71-5de7beedeecf",
+                    "leftValue": "={{ $json[\"x account \"] }}",
+                    "rightValue": "@WatcherGuru",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "@WatcherGuru"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3520,
+        -280
+      ],
+      "id": "9cddba92-6b81-43c4-9bce-627e91bcf7e3",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1960,
+        -300
+      ],
+      "id": "09622c8d-663c-4e92-b789-d22f84fd60ea",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "last 1 hour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "X account list": {
+      "main": [
+        [
+          {
+            "node": "OuterLoop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "post read": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "innerloop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "last 1 hour": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OuterLoop": {
+      "main": [
+        [],
+        [
+          {
+            "node": "post read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "innerloop": {
+      "main": [
+        [
+          {
+            "node": "OuterLoop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "innerloop1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "innerloop1": {
+      "main": [
+        [
+          {
+            "node": "OuterLoop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "innerloop2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "innerloop2": {
+      "main": [
+        [
+          {
+            "node": "OuterLoop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "innerloop2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "innerloop",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "innerloop1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "X account list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "180ea897-3f10-4a76-a5df-6a6714d4268e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21574404d61351f109803c6a7ef4ffe3b682dcedcfe9d0e0b11f4a06932343d6"
+  },
+  "id": "cWLYIWT0L7LakRGg",
+  "tags": []
+}
